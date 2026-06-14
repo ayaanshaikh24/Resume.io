@@ -2,31 +2,30 @@
 
 @theme {
   /* Colors */
-  --color-primary: #cc785c;
-  --color-primary-active: #a9583e;
-  --color-primary-disabled: #e6dfd8;
-  --color-ink: #141413;
-  --color-body: #3d3d3a;
-  --color-body-strong: #252523;
-  --color-muted: #6c6a64;
-  --color-muted-soft: #8e8b82;
-  --color-hairline: #e6dfd8;
-  --color-hairline-soft: #ebe6df;
-  --color-canvas: #faf9f5;
-  --color-surface-soft: #f5f0e8;
-  --color-surface-card: #efe9de;
-  --color-surface-cream-strong: #e8e0d2;
-  --color-surface-dark: #181715;
-  --color-surface-dark-elevated: #252320;
-  --color-surface-dark-soft: #1f1e1b;
-  --color-on-primary: #ffffff;
-  --color-on-dark: #faf9f5;
-  --color-on-dark-soft: #a09d96;
-  --color-accent-teal: #5db8a6;
-  --color-accent-amber: #e8a55a;
-  --color-success: #5db872;
-  --color-warning: #d4a017;
-  --color-error: #c64545;
+  --color-primary: #D97757;
+  --color-primary-active: #B85B3D;
+  --color-primary-disabled: #F1ECE6;
+  --color-ink: #1F1F1F;
+  --color-body-strong: #1F1F1F;
+  --color-body: #666666;
+  --color-muted: #666666;
+  --color-muted-soft: #999999;
+  --color-hairline: #E5E5E5;
+  --color-hairline-soft: #EDEDED;
+  --color-canvas: #F8F7F4;
+  --color-surface-soft: #F1ECE6;
+  --color-surface-card: #FFFFFF;
+  --color-surface-dark: #1F1F1F;
+  --color-surface-dark-elevated: #2A2A2A;
+  --color-surface-dark-soft: #252525;
+  --color-on-primary: #FFFFFF;
+  --color-on-dark: #F8F7F4;
+  --color-on-dark-soft: #A8A8A8;
+  --color-accent-teal: #4A9E8E;
+  --color-accent-amber: #D18F45;
+  --color-success: #4A9E5D;
+  --color-warning: #C1921A;
+  --color-error: #B53A3A;
 
   /* Fonts */
   --font-serif: "Cormorant Garamond", "EB Garamond", Georgia, serif;
@@ -36,9 +35,9 @@
   /* Radii */
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
   --radius-pill: 9999px;
 
   /* Spacing */
@@ -52,13 +51,14 @@
   --spacing-section: 96px;
 }
 
-/* Base style resets and scrollbars to align with Claude design aesthetics */
+/* Base resets & transitions */
 html,
 body {
   margin: 0;
   background-color: var(--color-canvas);
   color: var(--color-body);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -67,10 +67,42 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 400;
 }
 
+/* Custom premium elements */
+.glass-panel {
+  background-color: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 24px rgba(31, 31, 31, 0.02);
+}
+
+.glass-input {
+  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-input:focus {
+  background-color: #FFFFFF;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(217, 119, 87, 0.12);
+}
+
+/* Premium Card hover effects */
+.hover-card-elevation {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-card-elevation:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(31, 31, 31, 0.04);
+  border-color: rgba(217, 119, 87, 0.3);
+}
+
 /* Webkit scrollbar customization for a premium feel */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: var(--color-canvas);
@@ -81,4 +113,80 @@ h1, h2, h3, h4, h5, h6 {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-muted-soft);
+}
+
+/* Dynamic saving breathing dot */
+@keyframes saving-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+.animate-saving-pulse {
+  animation: saving-pulse 2s infinite ease-in-out;
+}
+
+/* PRINT MEDIA QUERY - Hides all dashboard chrome for clean paper/PDF export */
+@media print {
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+  
+  body, 
+  html {
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Hide app shell dashboard elements */
+  header,
+  section:first-of-type, /* Left editor form column */
+  .no-print,
+  button,
+  .sticky,
+  footer,
+  #copy-summary-btn,
+  #download-image-btn,
+  #export-pdf-btn,
+  #reset-template-btn {
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+
+  /* Unset layouts and grids */
+  main,
+  .grid {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  /* Expand preview panel to full width without shadows or screen borders */
+  #resume-preview-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+
+  /* Adjust spacing in printed layouts */
+  #resume-preview-container header {
+    display: flex !important;
+    border-bottom: 1px solid #111111 !important;
+    margin-bottom: 6mm !important;
+    padding-bottom: 4mm !important;
+  }
 }

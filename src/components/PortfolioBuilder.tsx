@@ -14,6 +14,13 @@ export interface WorkExperience {
   description: string;
 }
 
+export interface Education {
+  school: string;
+  degree: string;
+  duration: string;
+  description: string;
+}
+
 export interface Contact {
   email: string;
   linkedin: string;
@@ -27,19 +34,20 @@ export interface ResumeData {
   skills: string[];
   projects: Project[];
   experience: WorkExperience[];
+  education: Education[];
   contact: Contact;
 }
 
 const DEFAULT_RESUME_DATA: ResumeData = {
-  name: 'Ayaan',
+  name: 'Ayaan Al-Ghazali',
   title: 'Advanced Agentic Developer & Product Designer',
   bio: 'Passionate engineer focusing on AI reasoning, web design, and human-computer interfaces. I build beautiful interfaces that feel literary and editorial, bridging the gap between complexity and humanist technology.',
-  skills: ['React', 'TypeScript', 'Astro', 'Tailwind CSS v4', 'Next.js', 'AI Orchestration', 'UI Design'],
+  skills: ['React', 'TypeScript', 'Astro', 'Tailwind CSS v4', 'Next.js', 'AI Orchestration', 'UI Design', 'PostgreSQL'],
   projects: [
     {
-      title: 'Claude Code Editor Mockup',
-      description: 'A syntax-highlighted code editor mockup showing dynamic typing effects and premium scrollbars.',
-      link: 'https://github.com/example/claude-code',
+      title: 'resumeio | Modern Resume Builder',
+      description: 'A client-side layout builder with real-time preview, print-perfect CSS overrides, and localStorage autosave.',
+      link: 'https://github.com/ayaan/resumeio',
     },
     {
       title: 'Warm Canvas Design System',
@@ -61,6 +69,14 @@ const DEFAULT_RESUME_DATA: ResumeData = {
       description: 'Architected single-page client-side web applications utilizing React and Astro. Integrated advanced canvas utilities and optimized build performance.',
     },
   ],
+  education: [
+    {
+      school: 'Stanford University',
+      degree: 'B.S. in Computer Science',
+      duration: '2019 - 2023',
+      description: 'Specialized in Human-Computer Interaction. Graduated with Honors.',
+    },
+  ],
   contact: {
     email: 'hello@ayaan.dev',
     linkedin: 'linkedin.com/in/ayaan',
@@ -76,6 +92,7 @@ export const PortfolioBuilder: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -83,7 +100,16 @@ export const PortfolioBuilder: React.FC = () => {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         try {
-          setData(JSON.parse(saved));
+          // Merge defaults in case user has older state format without education
+          const parsed = JSON.parse(saved);
+          setData({
+            ...DEFAULT_RESUME_DATA,
+            ...parsed,
+            contact: { ...DEFAULT_RESUME_DATA.contact, ...parsed.contact },
+            experience: parsed.experience || [],
+            projects: parsed.projects || [],
+            education: parsed.education || [],
+          });
         } catch (e) {
           console.error('Error loading resume data from localStorage', e);
         }
@@ -92,10 +118,15 @@ export const PortfolioBuilder: React.FC = () => {
     }
   }, []);
 
-  // Save to localStorage on change
+  // Debounced save to localStorage on change
   useEffect(() => {
     if (isLoaded && typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+      setIsSaving(true);
+      const timer = setTimeout(() => {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+        setIsSaving(false);
+      }, 600); // 600ms debounce
+      return () => clearTimeout(timer);
     }
   }, [data, isLoaded]);
 
@@ -198,14 +229,37 @@ export const PortfolioBuilder: React.FC = () => {
     }));
   };
 
-  // Reset to default template
+  // Repeatable education actions
+  const addEducation = () => {
+    setData((prev) => ({
+      ...prev,
+      education: [...prev.education, { school: '', degree: '', duration: '', description: '' }],
+    }));
+  };
+
+  const updateEducation = (index: number, key: keyof Education, value: string) => {
+    setData((prev) => {
+      const updated = [...prev.education];
+      updated[index] = { ...updated[index], [key]: value };
+      return { ...prev, education: updated };
+    });
+  };
+
+  const removeEducation = (index: number) => {
+    setData((prev) => ({
+      ...prev,
+      education: prev.education.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  // Reset template
   const resetToDefault = () => {
     if (confirm('Are you sure you want to reset all fields back to the default template? This will overwrite your current draft.')) {
       setData(DEFAULT_RESUME_DATA);
     }
   };
 
-  // Copy Markdown Summary to Clipboard
+  // Copy Markdown Summary
   const handleCopySummary = () => {
     const md = `
 # ${data.name || 'Name'}
@@ -228,6 +282,12 @@ ${data.experience.map((exp) => `
 ${exp.description || 'Description not specified'}
 `).join('\n')}
 
+## Education
+${data.education.map((edu) => `
+### ${edu.school || 'School'} | ${edu.degree || 'Degree'} (${edu.duration || 'Duration'})
+${edu.description || 'Description not specified'}
+`).join('\n')}
+
 ## Projects
 ${data.projects.map((proj) => `
 ### ${proj.title || 'Project'}
@@ -246,11 +306,10 @@ Link: ${proj.link || 'N/A'}
       });
   };
 
-  // Download Preview Panel as Image using html2canvas via CDN
+  // Download Resume as Image using html2canvas
   const handleDownloadImage = async () => {
     setDownloading(true);
     try {
-      // Dynamic promise import for CDN script
       const html2canvas = await new Promise<any>((resolve, reject) => {
         if ((window as any).html2canvas) {
           resolve((window as any).html2canvas);
@@ -268,11 +327,10 @@ Link: ${proj.link || 'N/A'}
         throw new Error('Preview container not found');
       }
 
-      // Render canvas
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        backgroundColor: '#faf9f5', // canvas background hex
+        backgroundColor: '#FFFFFF',
         logging: false,
       });
 
@@ -283,17 +341,21 @@ Link: ${proj.link || 'N/A'}
       link.click();
     } catch (err) {
       console.error('Download error:', err);
-      alert('Error generating image. Please verify you are connected to the internet to fetch html2canvas.');
+      alert('Error generating image.');
     } finally {
       setDownloading(false);
     }
   };
 
+  // Trigger Print View (Export PDF)
+  const handlePrintPDF = () => {
+    window.print();
+  };
+
   if (!isLoaded) {
     return (
       <div className="flex justify-center items-center h-[400px]">
-        <div className="text-muted font-sans text-sm animate-pulse flex items-center gap-2">
-          {/* Spike spinner */}
+        <div className="text-muted font-sans text-xs animate-pulse flex items-center gap-2">
           <svg className="w-5 h-5 animate-spin fill-current text-primary" viewBox="0 0 24 24">
             <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z" />
           </svg>
@@ -306,30 +368,42 @@ Link: ${proj.link || 'N/A'}
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-[1440px] mx-auto p-4 md:p-8">
       
-      {/* LEFT COLUMN: The Interactive Form (7 cols) */}
+      {/* LEFT COLUMN: The Glassmorphic Editor Panel (7 cols) */}
       <section className="lg:col-span-6 xl:col-span-5 flex flex-col gap-8">
-        <div className="bg-canvas border border-hairline rounded-lg p-6 md:p-8 flex flex-col gap-6">
+        <div className="glass-panel rounded-2xl p-6 md:p-8 flex flex-col gap-8">
+          
           <div className="flex justify-between items-center border-b border-hairline pb-4">
-            <h2 className="font-serif text-2xl text-ink tracking-tight">
-              Edit Portfolio Data
-            </h2>
+            <div>
+              <h2 className="font-serif text-2xl text-ink tracking-tight font-normal">
+                Edit Resume
+              </h2>
+              <p className="text-[10px] font-sans text-muted mt-1 uppercase tracking-wider">
+                Create a startup-grade resume
+              </p>
+            </div>
             <button
               onClick={resetToDefault}
-              className="text-xs font-sans font-medium text-muted hover:text-primary transition-colors cursor-pointer border border-hairline rounded px-2.5 py-1 hover:bg-surface-soft"
+              className="text-xs font-sans font-medium text-muted hover:text-primary hover:bg-white border border-hairline rounded-md px-3 py-1.5 transition-all duration-300 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
               id="reset-template-btn"
             >
-              Reset to Template
+              Reset Draft
             </button>
           </div>
 
-          {/* Profile Section */}
-          <div className="flex flex-col gap-4">
-            <h3 className="text-xs font-sans font-semibold uppercase tracking-[0.15em] text-muted-soft">
-              Profile Details
-            </h3>
+          {/* Profile Details Section */}
+          <div className="flex flex-col gap-5">
+            <div className="flex items-center gap-2 border-b border-hairline-soft pb-2">
+              {/* User Icon SVG */}
+              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+              <h3 className="text-[10px] font-sans font-semibold uppercase tracking-[0.15em] text-ink">
+                Profile Details
+              </h3>
+            </div>
             
-            <div className="flex flex-col gap-1">
-              <label htmlFor="form-name" className="text-xs font-sans font-medium text-muted">
+            <div className="flex flex-col">
+              <label htmlFor="form-name" className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted mb-1.5">
                 Full Name
               </label>
               <input
@@ -337,13 +411,13 @@ Link: ${proj.link || 'N/A'}
                 type="text"
                 value={data.name}
                 onChange={(e) => updateField('name', e.target.value)}
-                placeholder="Ayaan"
-                className="bg-canvas text-ink font-sans text-sm rounded-md px-3.5 py-2.5 h-10 border border-hairline focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all w-full"
+                placeholder="Ayaan Al-Ghazali"
+                className="glass-input text-ink rounded-md h-10 px-3.5 py-2.5 text-xs border border-hairline focus:outline-none w-full"
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label htmlFor="form-title" className="text-xs font-sans font-medium text-muted">
+            <div className="flex flex-col">
+              <label htmlFor="form-title" className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted mb-1.5">
                 Professional Title
               </label>
               <input
@@ -351,13 +425,13 @@ Link: ${proj.link || 'N/A'}
                 type="text"
                 value={data.title}
                 onChange={(e) => updateField('title', e.target.value)}
-                placeholder="Full Stack Engineer"
-                className="bg-canvas text-ink font-sans text-sm rounded-md px-3.5 py-2.5 h-10 border border-hairline focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all w-full"
+                placeholder="Advanced Developer & Designer"
+                className="glass-input text-ink rounded-md h-10 px-3.5 py-2.5 text-xs border border-hairline focus:outline-none w-full"
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label htmlFor="form-bio" className="text-xs font-sans font-medium text-muted">
+            <div className="flex flex-col">
+              <label htmlFor="form-bio" className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted mb-1.5">
                 Profile Bio
               </label>
               <textarea
@@ -366,20 +440,26 @@ Link: ${proj.link || 'N/A'}
                 onChange={(e) => updateField('bio', e.target.value)}
                 placeholder="Brief professional profile bio..."
                 rows={4}
-                className="bg-canvas text-ink font-sans text-sm rounded-md px-3.5 py-2.5 min-h-[100px] border border-hairline focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all w-full resize-y"
+                className="glass-input text-ink rounded-md px-3.5 py-2.5 text-xs border border-hairline focus:outline-none w-full resize-y min-h-[90px]"
               />
             </div>
           </div>
 
-          {/* Contact Details */}
-          <div className="flex flex-col gap-4 pt-4 border-t border-hairline-soft">
-            <h3 className="text-xs font-sans font-semibold uppercase tracking-[0.15em] text-muted-soft">
-              Contact Details
-            </h3>
+          {/* Contact Details Section */}
+          <div className="flex flex-col gap-5">
+            <div className="flex items-center gap-2 border-b border-hairline-soft pb-2">
+              {/* Envelope SVG */}
+              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+              </svg>
+              <h3 className="text-[10px] font-sans font-semibold uppercase tracking-[0.15em] text-ink">
+                Contact Details
+              </h3>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1">
-                <label htmlFor="form-email" className="text-xs font-sans font-medium text-muted">
+              <div className="flex flex-col">
+                <label htmlFor="form-email" className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted mb-1.5">
                   Email Address
                 </label>
                 <input
@@ -388,13 +468,13 @@ Link: ${proj.link || 'N/A'}
                   value={data.contact.email}
                   onChange={(e) => updateContactField('email', e.target.value)}
                   placeholder="hello@ayaan.dev"
-                  className="bg-canvas text-ink font-sans text-sm rounded-md px-3.5 py-2.5 h-10 border border-hairline focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all w-full"
+                  className="glass-input text-ink rounded-md h-10 px-3.5 py-2.5 text-xs border border-hairline focus:outline-none w-full"
                 />
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label htmlFor="form-linkedin" className="text-xs font-sans font-medium text-muted">
-                  LinkedIn Profile URL
+              <div className="flex flex-col">
+                <label htmlFor="form-linkedin" className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted mb-1.5">
+                  LinkedIn Profile
                 </label>
                 <input
                   id="form-linkedin"
@@ -402,13 +482,13 @@ Link: ${proj.link || 'N/A'}
                   value={data.contact.linkedin}
                   onChange={(e) => updateContactField('linkedin', e.target.value)}
                   placeholder="linkedin.com/in/username"
-                  className="bg-canvas text-ink font-sans text-sm rounded-md px-3.5 py-2.5 h-10 border border-hairline focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all w-full"
+                  className="glass-input text-ink rounded-md h-10 px-3.5 py-2.5 text-xs border border-hairline focus:outline-none w-full"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label htmlFor="form-github" className="text-xs font-sans font-medium text-muted">
+            <div className="flex flex-col">
+              <label htmlFor="form-github" className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted mb-1.5">
                 GitHub Username / Profile URL
               </label>
               <input
@@ -417,19 +497,25 @@ Link: ${proj.link || 'N/A'}
                 value={data.contact.github}
                 onChange={(e) => updateContactField('github', e.target.value)}
                 placeholder="github.com/username"
-                className="bg-canvas text-ink font-sans text-sm rounded-md px-3.5 py-2.5 h-10 border border-hairline focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all w-full"
+                className="glass-input text-ink rounded-md h-10 px-3.5 py-2.5 text-xs border border-hairline focus:outline-none w-full"
               />
             </div>
           </div>
 
           {/* Skills Section */}
-          <div className="flex flex-col gap-4 pt-4 border-t border-hairline-soft">
-            <div className="flex justify-between items-baseline">
-              <h3 className="text-xs font-sans font-semibold uppercase tracking-[0.15em] text-muted-soft">
-                Skills & Technologies
-              </h3>
-              <span className="text-[10px] font-sans text-muted-soft">
-                Press Enter or Comma to add
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-hairline-soft pb-2">
+              <div className="flex items-center gap-2">
+                {/* Code Icon SVG */}
+                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                </svg>
+                <h3 className="text-[10px] font-sans font-semibold uppercase tracking-[0.15em] text-ink">
+                  Skills & Tech
+                </h3>
+              </div>
+              <span className="text-[9px] font-sans text-muted-soft uppercase tracking-wider">
+                Enter / comma to add
               </span>
             </div>
 
@@ -441,21 +527,21 @@ Link: ${proj.link || 'N/A'}
                 onChange={(e) => setSkillInput(e.target.value)}
                 onKeyDown={handleSkillKeyDown}
                 onBlur={() => addSkill(skillInput)}
-                placeholder="Add skill tag (e.g. React, Docker)..."
-                className="bg-canvas text-ink font-sans text-sm rounded-md px-3.5 py-2.5 h-10 border border-hairline focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all w-full"
+                placeholder="Add skill tag (e.g. Next.js, Postgres)..."
+                className="glass-input text-ink rounded-md h-10 px-3.5 py-2.5 text-xs border border-hairline focus:outline-none w-full"
               />
               
               {/* Skill Tags List */}
-              <div className="flex flex-wrap gap-1.5 mt-2">
+              <div className="flex flex-wrap gap-1.5 mt-1">
                 {data.skills.map((skill, idx) => (
                   <span
                     key={idx}
                     onClick={() => removeSkill(idx)}
-                    className="inline-flex items-center gap-1 bg-surface-card hover:bg-red-50 text-ink hover:text-error font-sans text-xs px-2.5 py-1 rounded-pill border border-hairline-soft font-medium cursor-pointer transition-colors group"
+                    className="inline-flex items-center gap-1 bg-white/70 hover:bg-red-50 text-ink hover:text-error font-sans text-[11px] px-2.5 py-1 rounded-sm border border-hairline-soft font-medium cursor-pointer transition-colors group shadow-[0_1px_2px_rgba(0,0,0,0.01)]"
                     title="Click to remove"
                   >
                     {skill}
-                    <span className="text-[10px] text-muted group-hover:text-error">×</span>
+                    <span className="text-[9px] text-muted-soft group-hover:text-error ml-0.5">×</span>
                   </span>
                 ))}
               </div>
@@ -463,109 +549,219 @@ Link: ${proj.link || 'N/A'}
           </div>
 
           {/* Work Experience Section */}
-          <div className="flex flex-col gap-4 pt-4 border-t border-hairline-soft">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xs font-sans font-semibold uppercase tracking-[0.15em] text-muted-soft">
-                Work Experience
-              </h3>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-hairline-soft pb-2">
+              <div className="flex items-center gap-2">
+                {/* Briefcase SVG */}
+                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 .552-.448 1-1 1H4.75c-.552 0-1-.448-1-1v-4.25m16.5 0a1.5 1.5 0 00-1.5-1.5H4.75A1.5 1.5 0 003.25 14.15m17 0V9.43a1.5 1.5 0 00-1-1.42l-4.5-1.5a1.5 1.5 0 00-1 0l-4.5 1.5a1.5 1.5 0 00-1 1.42v4.72m10.5-4.72V6.75a2.25 2.25 0 00-2.25-2.25h-3a2.25 2.25 0 00-2.25 2.25v2.96" />
+                </svg>
+                <h3 className="text-[10px] font-sans font-semibold uppercase tracking-[0.15em] text-ink">
+                  Work Experience
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={addExperience}
-                className="text-xs font-sans font-medium text-primary hover:text-primary-active transition-colors flex items-center gap-1 cursor-pointer"
+                className="text-[10px] font-sans font-semibold text-primary hover:text-primary-active uppercase tracking-wider transition-colors flex items-center gap-1 cursor-pointer"
                 id="add-experience-btn"
               >
-                + Add Experience
+                + Add Role
               </button>
             </div>
 
             <div className="flex flex-col gap-4">
               {data.experience.map((exp, idx) => (
-                <div key={idx} className="bg-surface-soft p-4 rounded-lg border border-hairline-soft flex flex-col gap-3 relative group">
+                <div key={idx} className="bg-white/30 hover:bg-white/50 border border-hairline-soft rounded-lg p-5 flex flex-col gap-3 relative group transition-all duration-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.01)] hover-card-elevation">
                   <button
                     type="button"
                     onClick={() => removeExperience(idx)}
-                    className="absolute top-3 right-3 text-muted-soft hover:text-error transition-colors p-1 cursor-pointer"
+                    className="absolute top-4 right-4 text-muted-soft hover:text-error transition-colors p-1 cursor-pointer"
                     title="Remove experience"
                   >
-                    {/* Trash Can SVG */}
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                         Company Name
                       </label>
                       <input
                         type="text"
                         value={exp.company}
                         onChange={(e) => updateExperience(idx, 'company', e.target.value)}
-                        placeholder="Company"
-                        className="bg-canvas text-ink font-sans text-xs rounded-md px-2.5 py-2 h-9 border border-hairline focus:outline-none focus:border-primary w-full"
+                        placeholder="e.g. Stripe"
+                        className="glass-input text-ink rounded px-2.5 py-1.5 text-xs border border-hairline focus:outline-none w-full h-9"
                       />
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted">
-                        Duration (e.g. 2025 - Present)
+                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                        Duration
                       </label>
                       <input
                         type="text"
                         value={exp.duration}
                         onChange={(e) => updateExperience(idx, 'duration', e.target.value)}
-                        placeholder="Duration"
-                        className="bg-canvas text-ink font-sans text-xs rounded-md px-2.5 py-2 h-9 border border-hairline focus:outline-none focus:border-primary w-full"
+                        placeholder="e.g. 2024 - Present"
+                        className="glass-input text-ink rounded px-2.5 py-1.5 text-xs border border-hairline focus:outline-none w-full h-9"
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted">
-                      Role Title
+                    <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      Role / Position Title
                     </label>
                     <input
                       type="text"
                       value={exp.role}
                       onChange={(e) => updateExperience(idx, 'role', e.target.value)}
-                      placeholder="Role"
-                      className="bg-canvas text-ink font-sans text-xs rounded-md px-2.5 py-2 h-9 border border-hairline focus:outline-none focus:border-primary w-full"
+                      placeholder="e.g. Staff Engineer"
+                      className="glass-input text-ink rounded px-2.5 py-1.5 text-xs border border-hairline focus:outline-none w-full h-9"
                     />
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted">
-                      Description / Key Accomplishments
+                    <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      Role Description
                     </label>
                     <textarea
                       value={exp.description}
                       onChange={(e) => updateExperience(idx, 'description', e.target.value)}
-                      placeholder="Duties, achievements, and technical stack details..."
+                      placeholder="List technical stack details and core accomplishments..."
                       rows={3}
-                      className="bg-canvas text-ink font-sans text-xs rounded-md px-2.5 py-2 min-h-[70px] border border-hairline focus:outline-none focus:border-primary w-full resize-y"
+                      className="glass-input text-ink rounded px-2.5 py-1.5 text-xs border border-hairline focus:outline-none w-full resize-y min-h-[60px]"
                     />
                   </div>
                 </div>
               ))}
               {data.experience.length === 0 && (
                 <p className="text-xs text-muted-soft italic text-center py-4 border border-dashed border-hairline rounded-lg">
-                  No experience items added. Click "+ Add Experience" to build your timeline.
+                  No experience items added.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Education Section */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-hairline-soft pb-2">
+              <div className="flex items-center gap-2">
+                {/* Academic cap SVG */}
+                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M12 2.25V4.5m0 12.852V21" />
+                </svg>
+                <h3 className="text-[10px] font-sans font-semibold uppercase tracking-[0.15em] text-ink">
+                  Education
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={addEducation}
+                className="text-[10px] font-sans font-semibold text-primary hover:text-primary-active uppercase tracking-wider transition-colors flex items-center gap-1 cursor-pointer"
+                id="add-education-btn"
+              >
+                + Add Degree
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {data.education.map((edu, idx) => (
+                <div key={idx} className="bg-white/30 hover:bg-white/50 border border-hairline-soft rounded-lg p-5 flex flex-col gap-3 relative group transition-all duration-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.01)] hover-card-elevation">
+                  <button
+                    type="button"
+                    onClick={() => removeEducation(idx)}
+                    className="absolute top-4 right-4 text-muted-soft hover:text-error transition-colors p-1 cursor-pointer"
+                    title="Remove education"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                        School / University
+                      </label>
+                      <input
+                        type="text"
+                        value={edu.school}
+                        onChange={(e) => updateEducation(idx, 'school', e.target.value)}
+                        placeholder="e.g. Stanford University"
+                        className="glass-input text-ink rounded px-2.5 py-1.5 text-xs border border-hairline focus:outline-none w-full h-9"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                        Duration
+                      </label>
+                      <input
+                        type="text"
+                        value={edu.duration}
+                        onChange={(e) => updateEducation(idx, 'duration', e.target.value)}
+                        placeholder="e.g. 2019 - 2023"
+                        className="glass-input text-ink rounded px-2.5 py-1.5 text-xs border border-hairline focus:outline-none w-full h-9"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      Degree / Program
+                    </label>
+                    <input
+                      type="text"
+                      value={edu.degree}
+                      onChange={(e) => updateEducation(idx, 'degree', e.target.value)}
+                      placeholder="e.g. B.S. in Computer Science"
+                      className="glass-input text-ink rounded px-2.5 py-1.5 text-xs border border-hairline focus:outline-none w-full h-9"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      Description / Honors (Optional)
+                    </label>
+                    <textarea
+                      value={edu.description}
+                      onChange={(e) => updateEducation(idx, 'description', e.target.value)}
+                      placeholder="Activities, achievements, honors, or thesis topics..."
+                      rows={2}
+                      className="glass-input text-ink rounded px-2.5 py-1.5 text-xs border border-hairline focus:outline-none w-full resize-y min-h-[50px]"
+                    />
+                  </div>
+                </div>
+              ))}
+              {data.education.length === 0 && (
+                <p className="text-xs text-muted-soft italic text-center py-4 border border-dashed border-hairline rounded-lg">
+                  No education items added.
                 </p>
               )}
             </div>
           </div>
 
           {/* Projects Section */}
-          <div className="flex flex-col gap-4 pt-4 border-t border-hairline-soft">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xs font-sans font-semibold uppercase tracking-[0.15em] text-muted-soft">
-                Key Projects
-              </h3>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-hairline-soft pb-2">
+              <div className="flex items-center gap-2">
+                {/* Folder icon SVG */}
+                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.008 1.24l.885 1.77a2.25 2.25 0 002.007 1.24h1.98a2.25 2.25 0 002.007-1.24l.885-1.77a2.25 2.25 0 012.007-1.24h3.86m-18 0h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0017.25 3h-5.25L10.5 5.25H3.75A2.25 2.25 0 001.5 7.5v4.5a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+                <h3 className="text-[10px] font-sans font-semibold uppercase tracking-[0.15em] text-ink">
+                  Featured Projects
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={addProject}
-                className="text-xs font-sans font-medium text-primary hover:text-primary-active transition-colors flex items-center gap-1 cursor-pointer"
+                className="text-[10px] font-sans font-semibold text-primary hover:text-primary-active uppercase tracking-wider transition-colors flex items-center gap-1 cursor-pointer"
                 id="add-project-btn"
               >
                 + Add Project
@@ -574,64 +770,63 @@ Link: ${proj.link || 'N/A'}
 
             <div className="flex flex-col gap-4">
               {data.projects.map((proj, idx) => (
-                <div key={idx} className="bg-surface-soft p-4 rounded-lg border border-hairline-soft flex flex-col gap-3 relative group">
+                <div key={idx} className="bg-white/30 hover:bg-white/50 border border-hairline-soft rounded-lg p-5 flex flex-col gap-3 relative group transition-all duration-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.01)] hover-card-elevation">
                   <button
                     type="button"
                     onClick={() => removeProject(idx)}
-                    className="absolute top-3 right-3 text-muted-soft hover:text-error transition-colors p-1 cursor-pointer"
+                    className="absolute top-4 right-4 text-muted-soft hover:text-error transition-colors p-1 cursor-pointer"
                     title="Remove project"
                   >
-                    {/* Trash Can SVG */}
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                         Project Title
                       </label>
                       <input
                         type="text"
                         value={proj.title}
                         onChange={(e) => updateProject(idx, 'title', e.target.value)}
-                        placeholder="Project Title"
-                        className="bg-canvas text-ink font-sans text-xs rounded-md px-2.5 py-2 h-9 border border-hairline focus:outline-none focus:border-primary w-full"
+                        placeholder="e.g. resumeio"
+                        className="glass-input text-ink rounded px-2.5 py-1.5 text-xs border border-hairline focus:outline-none w-full h-9"
                       />
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                         Project Link
                       </label>
                       <input
                         type="text"
                         value={proj.link}
                         onChange={(e) => updateProject(idx, 'link', e.target.value)}
-                        placeholder="github.com/username/project"
-                        className="bg-canvas text-ink font-sans text-xs rounded-md px-2.5 py-2 h-9 border border-hairline focus:outline-none focus:border-primary w-full"
+                        placeholder="e.g. github.com/username/repo"
+                        className="glass-input text-ink rounded px-2.5 py-1.5 text-xs border border-hairline focus:outline-none w-full h-9"
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted">
+                    <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                       Project Description
                     </label>
                     <textarea
                       value={proj.description}
                       onChange={(e) => updateProject(idx, 'description', e.target.value)}
-                      placeholder="What does this project do and what technologies did you use?"
+                      placeholder="What is the purpose of this project and what tech stacks did you use?"
                       rows={3}
-                      className="bg-canvas text-ink font-sans text-xs rounded-md px-2.5 py-2 min-h-[70px] border border-hairline focus:outline-none focus:border-primary w-full resize-y"
+                      className="glass-input text-ink rounded px-2.5 py-1.5 text-xs border border-hairline focus:outline-none w-full resize-y min-h-[60px]"
                     />
                   </div>
                 </div>
               ))}
               {data.projects.length === 0 && (
                 <p className="text-xs text-muted-soft italic text-center py-4 border border-dashed border-hairline rounded-lg">
-                  No projects added. Click "+ Add Project" to feature your work.
+                  No projects added.
                 </p>
               )}
             </div>
@@ -640,73 +835,87 @@ Link: ${proj.link || 'N/A'}
         </div>
       </section>
 
-      {/* RIGHT COLUMN: The Toolbar & Live Preview (5 cols) */}
+      {/* RIGHT COLUMN: The Sticky Glassmorphic Actions & Live Preview (5 cols) */}
       <section className="lg:col-span-6 xl:col-span-7 lg:sticky lg:top-8 flex flex-col gap-6">
         
-        {/* Actions Toolbar */}
-        <div className="bg-canvas border border-hairline rounded-lg p-4 flex flex-wrap gap-3 items-center justify-between shadow-[0_1px_3px_rgba(20,20,19,0.02)]">
+        {/* Premium Action Toolbar (Not visible during printing) */}
+        <div className="glass-panel rounded-2xl p-4 flex flex-wrap gap-4 items-center justify-between shadow-[0_2px_12px_rgba(31,31,31,0.02)] no-print">
+          {/* Micro-interaction Autosave Indicator */}
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-success animate-pulse"></div>
-            <span className="text-xs font-sans text-muted font-medium">
-              Autosaved to draft
+            <div className={`w-2 h-2 rounded-full ${isSaving ? 'bg-amber bg-accent-amber animate-saving-pulse' : 'bg-success bg-accent-teal'}`}></div>
+            <span className="text-[10px] font-sans text-muted font-semibold uppercase tracking-wider">
+              {isSaving ? 'Saving draft...' : 'Saved to draft'}
             </span>
           </div>
 
-          <div className="flex gap-2.5">
-            {/* Copy markdown summary button */}
+          <div className="flex flex-wrap gap-2">
+            {/* Copy Markdown Summary */}
             <button
               onClick={handleCopySummary}
-              className="bg-canvas hover:bg-surface-soft text-ink text-sm font-sans font-medium px-4 py-2.5 h-10 rounded-md border border-hairline transition-colors flex items-center gap-2 cursor-pointer shadow-[0_1px_2px_rgba(20,20,19,0.03)]"
-              title="Copy portfolio summary in markdown format"
+              className="bg-white/60 hover:bg-white text-ink text-xs font-semibold px-3 py-2 h-9 rounded-md border border-hairline transition-all duration-300 flex items-center gap-1.5 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+              title="Copy resume details as Markdown format"
               id="copy-summary-btn"
             >
               {copied ? (
                 <>
-                  <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-success" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
-                  <span>Copied!</span>
+                  <span>Copied</span>
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-muted-soft" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c1.009.308 1.75 1.224 1.75 2.312v12.75c0 1.353-1.097 2.45-2.45 2.45H6.45C5.097 21 4 19.903 4 18.55V6.2c0-1.088.741-2.004 1.75-2.312M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm-1.5 6a3.75 3.75 0 10-9 0" />
                   </svg>
-                  <span>Copy Summary</span>
+                  <span>Copy Markdown</span>
                 </>
               )}
             </button>
 
-            {/* Download as PNG button */}
+            {/* Download as Image PNG */}
             <button
               onClick={handleDownloadImage}
               disabled={downloading}
-              className="bg-primary hover:bg-primary-active disabled:bg-primary-disabled text-on-primary text-sm font-sans font-medium px-4 py-2.5 h-10 rounded-md transition-colors flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(204,120,92,0.1)] cursor-pointer"
-              title="Download portfolio as high resolution image"
+              className="bg-white/60 hover:bg-white text-ink text-xs font-semibold px-3 py-2 h-9 rounded-md border border-hairline transition-all duration-300 flex items-center gap-1.5 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+              title="Download resume canvas as PNG"
               id="download-image-btn"
             >
               {downloading ? (
                 <>
-                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 animate-spin text-primary" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span>Processing...</span>
+                  <span>Rendering...</span>
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  <svg className="w-3.5 h-3.5 text-muted-soft" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375 0 11-.75 0 .375 0 01.75 0z" />
                   </svg>
-                  <span>Download Image</span>
+                  <span>Download PNG</span>
                 </>
               )}
+            </button>
+
+            {/* Export PDF (triggers print dialog) */}
+            <button
+              onClick={handlePrintPDF}
+              className="bg-primary hover:bg-primary-active text-white text-xs font-semibold px-4 py-2 h-9 rounded-md transition-all duration-300 flex items-center gap-1.5 cursor-pointer shadow-[0_2px_8px_rgba(217,119,87,0.15)] hover:shadow-[0_4px_12px_rgba(217,119,87,0.22)]"
+              title="Print or export resume as PDF"
+              id="export-pdf-btn"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0a2.25 2.25 0 01-2.24 2.24H8.58A2.25 2.25 0 016.34 18m11.318-3.085c.24.03.48.062.72.096m-.72-.096a42.42 42.42 0 01-11.318 0m11.318 0l-.636 1.426a2.25 2.25 0 01-2.062 1.33H8.58a2.25 2.25 0 01-2.062-1.33l-.636-1.426M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Export PDF</span>
             </button>
           </div>
         </div>
 
-        {/* Live Preview Pane */}
-        <div className="overflow-x-auto">
+        {/* Live Resume Canvas */}
+        <div className="w-full overflow-x-auto">
           <PreviewPanel data={data} />
         </div>
       </section>
