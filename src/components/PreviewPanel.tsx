@@ -80,38 +80,36 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ data }) => {
           )}
 
           {/* Skills tags */}
-          <div>
-            <h2 className="text-xs font-sans font-semibold uppercase tracking-[0.2em] text-primary mb-3">
-              Skills
-            </h2>
-            <div className="flex flex-wrap gap-1.5">
-              {data.skills && data.skills.length > 0 ? (
-                data.skills.map((skill, idx) => (
+          {data.skills && data.skills.length > 0 && (
+            <div>
+              <h2 className="text-xs font-sans font-semibold uppercase tracking-[0.2em] text-primary mb-3">
+                Skills
+              </h2>
+              <div className="flex flex-wrap gap-1.5">
+                {data.skills.map((skill, idx) => (
                   <span
                     key={idx}
                     className="inline-block bg-canvas text-ink font-sans text-[11px] px-2.5 py-1 rounded-sm border border-hairline font-medium"
                   >
                     {skill}
                   </span>
-                ))
-              ) : (
-                <span className="text-xs text-muted-soft italic">No skills listed</span>
-              )}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right wider column (8 cols out of 12) */}
         <div className="md:col-span-8 flex flex-col gap-8">
           
           {/* Work Experience */}
-          <div>
-            <h2 className="text-xs font-sans font-semibold uppercase tracking-[0.2em] text-primary mb-4 border-b border-hairline pb-1.5">
-              Work Experience
-            </h2>
-            <div className="flex flex-col gap-6">
-              {data.experience && data.experience.length > 0 ? (
-                data.experience.map((exp, idx) => (
+          {data.experience && data.experience.length > 0 && (
+            <div>
+              <h2 className="text-xs font-sans font-semibold uppercase tracking-[0.2em] text-primary mb-4 border-b border-hairline pb-1.5">
+                Work Experience
+              </h2>
+              <div className="flex flex-col gap-6">
+                {data.experience.map((exp, idx) => (
                   <div key={idx} className="flex flex-col gap-1.5">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline gap-1">
                       <h3 className="font-serif text-lg text-ink font-normal leading-tight">
@@ -128,21 +126,19 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ data }) => {
                       {exp.description || 'Description'}
                     </p>
                   </div>
-                ))
-              ) : (
-                <p className="text-xs text-muted-soft italic">No work experience listed</p>
-              )}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Education Section */}
-          <div>
-            <h2 className="text-xs font-sans font-semibold uppercase tracking-[0.2em] text-primary mb-4 border-b border-hairline pb-1.5">
-              Education
-            </h2>
-            <div className="flex flex-col gap-6">
-              {data.education && data.education.length > 0 ? (
-                data.education.map((edu, idx) => (
+          {data.education && data.education.length > 0 && (
+            <div>
+              <h2 className="text-xs font-sans font-semibold uppercase tracking-[0.2em] text-primary mb-4 border-b border-hairline pb-1.5">
+                Education
+              </h2>
+              <div className="flex flex-col gap-6">
+                {data.education.map((edu, idx) => (
                   <div key={idx} className="flex flex-col gap-1.5">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline gap-1">
                       <h3 className="font-serif text-lg text-ink font-normal leading-tight">
@@ -161,21 +157,19 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ data }) => {
                       </p>
                     )}
                   </div>
-                ))
-              ) : (
-                <p className="text-xs text-muted-soft italic">No education details listed</p>
-              )}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Key Projects */}
-          <div>
-            <h2 className="text-xs font-sans font-semibold uppercase tracking-[0.2em] text-primary mb-4 border-b border-hairline pb-1.5">
-              Featured Projects
-            </h2>
-            <div className="grid grid-cols-1 gap-4">
-              {data.projects && data.projects.length > 0 ? (
-                data.projects.map((proj, idx) => (
+          {data.projects && data.projects.length > 0 && (
+            <div>
+              <h2 className="text-xs font-sans font-semibold uppercase tracking-[0.2em] text-primary mb-4 border-b border-hairline pb-1.5">
+                Featured Projects
+              </h2>
+              <div className="grid grid-cols-1 gap-4">
+                {data.projects.map((proj, idx) => (
                   <div 
                     key={idx} 
                     className="border-b border-hairline-soft pb-4 last:border-b-0 last:pb-0"
@@ -202,24 +196,31 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ data }) => {
                       {proj.description || 'Project description.'}
                     </p>
                   </div>
-                ))
-              ) : (
-                <p className="text-xs text-muted-soft italic">No projects listed</p>
-              )}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       </div>
       
       {/* Printable Watermark Footer */}
       <footer className="mt-12 pt-6 border-t border-hairline-soft flex items-center justify-between no-print">
-        <div className="flex items-center gap-1.5 text-muted-soft">
-          {/* Radial Spike Mark */}
-          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-            <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z" />
+        <div className="flex items-center gap-2 text-muted-soft">
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="footer-logo-bookmark-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#FFA47A" />
+                <stop offset="100%" stop-color="#D97757" />
+              </linearGradient>
+            </defs>
+            <rect x="3" y="5" width="15" height="16" rx="3.5" fill="none" stroke="currentColor" strokeWidth="2" />
+            <line x1="6.5" y1="10" x2="11.5" y2="10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <line x1="6.5" y1="13.5" x2="14.5" y2="13.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <line x1="6.5" y1="17" x2="10.5" y2="17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M12 3h6v9.5l-3-2.5-3 2.5V3z" fill="url(#footer-logo-bookmark-grad)" />
           </svg>
-          <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em]">
+          <span className="font-sans text-[11px] font-semibold tracking-[0.1em] text-ink/80">
             resumeio
           </span>
         </div>

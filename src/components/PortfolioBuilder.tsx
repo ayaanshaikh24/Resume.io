@@ -91,6 +91,7 @@ export const PortfolioBuilder: React.FC = () => {
   const [skillInput, setSkillInput] = useState('');
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -342,22 +343,108 @@ Link: ${proj.link || 'N/A'}
     } catch (err) {
       console.error('Download error:', err);
       alert('Error generating image.');
-    } finally {
-      setDownloading(false);
-    }
-  };
+      } finally {
+        setDownloading(false);
+      }
+    };
 
-  // Trigger Print View (Export PDF)
-  const handlePrintPDF = () => {
-    window.print();
-  };
+    // Download Resume as PDF using jsPDF + html2canvas
+    const handleDownloadPDF = async () => {
+      setDownloadingPdf(true);
+      try {
+        // Load html2canvas (already cached if PNG was used, otherwise loaded here)
+        const html2canvas = await new Promise<any>((resolve, reject) => {
+          if ((window as any).html2canvas) {
+            resolve((window as any).html2canvas);
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+          script.onload = () => resolve((window as any).html2canvas);
+          script.onerror = () => reject(new Error('Failed to load html2canvas from CDN'));
+          document.body.appendChild(script);
+        });
+
+        // Load jsPDF UMD module
+        const jspdfModule = await new Promise<any>((resolve, reject) => {
+          if ((window as any).jspdf) {
+            resolve((window as any).jspdf);
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+          script.onload = () => resolve((window as any).jspdf);
+          script.onerror = () => reject(new Error('Failed to load jsPDF from CDN'));
+          document.body.appendChild(script);
+        });
+
+        const element = document.getElementById('resume-preview-container');
+        if (!element) {
+          throw new Error('Preview container not found');
+        }
+
+        // Render target preview component into high-DPI canvas
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#FFFFFF',
+          logging: false,
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Grab jsPDF from UMD namespace
+        const jsPDFClass = jspdfModule.jsPDF;
+        const pdf = new jsPDFClass('p', 'mm', 'a4');
+        
+        const imgWidth = 210; // A4 page width in mm
+        const pageHeight = 295; // A4 page height in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        // Draw initial page
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        // Perform pagination if the resume exceeds single page length
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+
+        pdf.save(`${(data.name || 'portfolio').toLowerCase().replace(/\s+/g, '_')}_resume.pdf`);
+      } catch (err) {
+        console.error('PDF Download error:', err);
+        alert('Error generating PDF.');
+      } finally {
+        setDownloadingPdf(false);
+      }
+    };
+  
+    // Trigger Print View (Export PDF)
+    const handlePrintPDF = () => {
+      window.print();
+    };
 
   if (!isLoaded) {
     return (
       <div className="flex justify-center items-center h-[400px]">
         <div className="text-muted font-sans text-xs animate-pulse flex items-center gap-2">
-          <svg className="w-5 h-5 animate-spin fill-current text-primary" viewBox="0 0 24 24">
-            <path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z" />
+          <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="load-logo-bookmark-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#FFA47A" />
+                <stop offset="100%" stop-color="#D97757" />
+              </linearGradient>
+            </defs>
+            <rect x="3" y="5" width="15" height="16" rx="3.5" fill="none" stroke="currentColor" strokeWidth="2" />
+            <line x1="6.5" y1="10" x2="11.5" y2="10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <line x1="6.5" y1="13.5" x2="14.5" y2="13.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <line x1="6.5" y1="17" x2="10.5" y2="17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M12 3h6v9.5l-3-2.5-3 2.5V3z" fill="url(#load-logo-bookmark-grad)" />
           </svg>
           Loading workspace...
         </div>
@@ -895,6 +982,32 @@ Link: ${proj.link || 'N/A'}
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375 0 11-.75 0 .375 0 01.75 0z" />
                   </svg>
                   <span>Download PNG</span>
+                </>
+              )}
+            </button>
+
+            {/* Download as PDF */}
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloadingPdf}
+              className="bg-white/60 hover:bg-white text-ink text-xs font-semibold px-3 py-2 h-9 rounded-md border border-hairline transition-all duration-300 flex items-center gap-1.5 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+              title="Download resume as PDF directly"
+              id="download-pdf-btn"
+            >
+              {downloadingPdf ? (
+                <>
+                  <svg className="w-3.5 h-3.5 animate-spin text-primary" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Generating PDF...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5 text-muted-soft" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                  <span>Download PDF</span>
                 </>
               )}
             </button>

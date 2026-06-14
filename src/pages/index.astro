@@ -9,14 +9,23 @@ import { PortfolioBuilder } from '../components/PortfolioBuilder';
 		
 		<!-- Top Navigation Header -->
 		<header class="sticky top-0 z-50 h-16 bg-canvas border-b border-hairline px-4 md:px-8 flex items-center justify-between">
-			{/* Brand Wordmark (Asterisk + Brand Name) */}
-			<div class="flex items-center gap-2">
-				{/* 4-spoke Radial Spike SVG Mark */}
-				<svg class="w-5 h-5 fill-current text-ink" viewBox="0 0 24 24">
-					<path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z" />
+			{/* Brand Wordmark (Document Logo + Wordmark) */}
+			<div class="flex items-center gap-2.5 select-none">
+				<svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<defs>
+						<linearGradient id="logo-bookmark-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+							<stop offset="0%" stop-color="#FFA47A" />
+							<stop offset="100%" stop-color="#D97757" />
+						</linearGradient>
+					</defs>
+					<rect x="3" y="5" width="15" height="16" rx="3.5" fill="none" stroke="#E5DCD0" stroke-width="2" />
+					<line x1="6.5" y1="10" x2="11.5" y2="10" stroke="#E5DCD0" stroke-width="1.8" stroke-linecap="round" />
+					<line x1="6.5" y1="13.5" x2="14.5" y2="13.5" stroke="#E5DCD0" stroke-width="1.8" stroke-linecap="round" />
+					<line x1="6.5" y1="17" x2="10.5" y2="17" stroke="#E5DCD0" stroke-width="1.8" stroke-linecap="round" />
+					<path d="M12 3h6v9.5l-3-2.5-3 2.5V3z" fill="url(#logo-bookmark-grad)" />
 				</svg>
-				<span class="font-serif text-lg font-normal tracking-tight text-ink">
-					resume<span class="text-primary font-sans font-semibold">io</span>
+				<span class="font-sans text-xl font-medium tracking-tight text-ink">
+					resumeio
 				</span>
 			</div>
 			
