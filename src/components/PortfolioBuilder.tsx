@@ -317,9 +317,9 @@ Link: ${proj.link || 'N/A'}
           return;
         }
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+        script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.4/dist/html2canvas-pro.min.js';
         script.onload = () => resolve((window as any).html2canvas);
-        script.onerror = () => reject(new Error('Failed to load html2canvas from CDN'));
+        script.onerror = () => reject(new Error('Failed to load html2canvas-pro from CDN'));
         document.body.appendChild(script);
       });
 
@@ -359,9 +359,9 @@ Link: ${proj.link || 'N/A'}
             return;
           }
           const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+          script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.4/dist/html2canvas-pro.min.js';
           script.onload = () => resolve((window as any).html2canvas);
-          script.onerror = () => reject(new Error('Failed to load html2canvas from CDN'));
+          script.onerror = () => reject(new Error('Failed to load html2canvas-pro from CDN'));
           document.body.appendChild(script);
         });
 
