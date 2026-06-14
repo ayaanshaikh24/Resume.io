@@ -34,30 +34,20 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ data }) => {
             </a>
           )}
           {data.contact.linkedin && (
-            <a 
-              href={data.contact.linkedin.startsWith('http') ? data.contact.linkedin : `https://${data.contact.linkedin}`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="hover:text-primary transition-colors flex items-center md:justify-end gap-1.5"
-            >
+            <span className="flex items-center md:justify-end gap-1.5">
               <svg className="w-3.5 h-3.5 text-muted-soft" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
               </svg>
               {data.contact.linkedin.replace(/^https?:\/\/(www\.)?/, '')}
-            </a>
+            </span>
           )}
           {data.contact.github && (
-            <a 
-              href={data.contact.github.startsWith('http') ? data.contact.github : `https://${data.contact.github}`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="hover:text-primary transition-colors flex items-center md:justify-end gap-1.5"
-            >
+            <span className="flex items-center md:justify-end gap-1.5">
               <svg className="w-3.5 h-3.5 text-muted-soft" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
               </svg>
               {data.contact.github.replace(/^https?:\/\/(www\.)?/, '')}
-            </a>
+            </span>
           )}
         </div>
       </header>
