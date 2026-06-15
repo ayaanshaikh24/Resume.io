@@ -39,7 +39,7 @@ export interface ResumeData {
 }
 
 const DEFAULT_RESUME_DATA: ResumeData = {
-  name: 'Ayaan Al-Ghazali',
+  name: 'Jimmy',
   title: 'Advanced Agentic Developer & Product Designer',
   bio: 'Passionate engineer focusing on AI reasoning, web design, and human-computer interfaces. I build beautiful interfaces that feel literary and editorial, bridging the gap between complexity and humanist technology.',
   skills: ['React', 'TypeScript', 'Astro', 'Tailwind CSS v4', 'Next.js', 'AI Orchestration', 'UI Design', 'PostgreSQL'],
@@ -47,7 +47,7 @@ const DEFAULT_RESUME_DATA: ResumeData = {
     {
       title: 'resumeio | Modern Resume Builder',
       description: 'A client-side layout builder with real-time preview, print-perfect CSS overrides, and localStorage autosave.',
-      link: 'https://github.com/ayaan/resumeio',
+      link: 'https://github.com/jimmy/resumeio',
     },
     {
       title: 'Warm Canvas Design System',
@@ -57,7 +57,7 @@ const DEFAULT_RESUME_DATA: ResumeData = {
   ],
   experience: [
     {
-      company: 'Anthropic',
+      company: 'Microsoft',
       role: 'AI Interface Designer',
       duration: '2025 - Present',
       description: 'Leading the design of next-generation developer tools. Established editorial layout guidelines and improved typographic hierarchies across chat environments.',
@@ -78,9 +78,9 @@ const DEFAULT_RESUME_DATA: ResumeData = {
     },
   ],
   contact: {
-    email: 'hello@ayaan.dev',
-    linkedin: 'linkedin.com/in/ayaan',
-    github: 'github.com/ayaan',
+    email: 'hello@jimmy.dev',
+    linkedin: 'linkedin.com/in/jimmy',
+    github: 'github.com/jimmy',
   },
 };
 
