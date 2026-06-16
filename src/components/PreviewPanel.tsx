@@ -26,7 +26,7 @@ interface PreviewPanelProps {
   data: ResumeData;
 }
 
-export const PreviewPanel: React.FC<PreviewPanelProps> = ({ data }) => {
+const PreviewPanelInner: React.FC<PreviewPanelProps> = ({ data }) => {
   return (
     <div
       id="resume-preview-container"
@@ -229,3 +229,5 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ data }) => {
     </div>
   );
 };
+
+export const PreviewPanel = React.memo(PreviewPanelInner);

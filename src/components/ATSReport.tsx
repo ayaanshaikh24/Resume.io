@@ -26,7 +26,7 @@ const ringBgColor = (score: number, max: number): string => {
   return 'text-error/15';
 };
 
-export const ATSReportPanel: React.FC<ATSReportPanelProps> = ({ report }) => {
+const ATSReportPanelInner: React.FC<ATSReportPanelProps> = ({ report }) => {
   const [isOpen, setIsOpen] = useState(true);
 
   const circumference = 2 * Math.PI * 18;
@@ -36,6 +36,8 @@ export const ATSReportPanel: React.FC<ATSReportPanelProps> = ({ report }) => {
     <div className="glass-panel rounded-[12px] overflow-hidden no-print">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-controls="ats-checks-panel"
         className="w-full flex items-center justify-between p-4 cursor-pointer hover:bg-hairline-soft transition-colors"
       >
         <div className="flex items-center gap-3">
@@ -78,7 +80,7 @@ export const ATSReportPanel: React.FC<ATSReportPanelProps> = ({ report }) => {
       </button>
 
       {isOpen && (
-        <div className="px-4 pb-4 flex flex-col gap-1 border-t border-hairline pt-3">
+        <div id="ats-checks-panel" className="px-4 pb-4 flex flex-col gap-1 border-t border-hairline pt-3">
           {report.checks.map(check => (
             <div key={check.id} className="flex items-start gap-2.5 py-1.5">
               {check.status === 'pass' ? (
@@ -123,3 +125,5 @@ export const ATSReportPanel: React.FC<ATSReportPanelProps> = ({ report }) => {
     </div>
   );
 };
+
+export const ATSReportPanel = React.memo(ATSReportPanelInner);

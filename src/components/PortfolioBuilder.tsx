@@ -102,9 +102,9 @@ export const PortfolioBuilder: React.FC = () => {
   // Load from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (saved) {
-        try {
+      try {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (saved) {
           // Merge defaults in case user has older state format without education
           const parsed = JSON.parse(saved);
           setData({
@@ -115,9 +115,9 @@ export const PortfolioBuilder: React.FC = () => {
             projects: parsed.projects || [],
             education: parsed.education || [],
           });
-        } catch (e) {
-          console.error('Error loading resume data from localStorage', e);
         }
+      } catch (e) {
+        console.error('Error loading resume data from localStorage', e);
       }
       setIsLoaded(true);
     }
@@ -128,7 +128,11 @@ export const PortfolioBuilder: React.FC = () => {
     if (isLoaded && typeof window !== 'undefined') {
       setIsSaving(true);
       const timer = setTimeout(() => {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+          console.error('Error saving resume data to localStorage', e);
+        }
         setIsSaving(false);
       }, 600); // 600ms debounce
       return () => clearTimeout(timer);
@@ -136,7 +140,7 @@ export const PortfolioBuilder: React.FC = () => {
   }, [data, isLoaded]);
 
   // Update root profile fields
-  const updateField = (field: keyof ResumeData, value: any) => {
+  const updateField = <K extends keyof ResumeData>(field: K, value: ResumeData[K]) => {
     setData((prev) => ({
       ...prev,
       [field]: value,
@@ -316,14 +320,25 @@ Link: ${proj.link || 'N/A'}
     setDownloading(true);
     try {
       const html2canvas = await new Promise<any>((resolve, reject) => {
-        if ((window as any).html2canvas) {
+        if (typeof (window as any).html2canvas === 'function') {
           resolve((window as any).html2canvas);
           return;
         }
+        const timer = setTimeout(() => reject(new Error('CDN timed out loading html2canvas-pro')), 15000);
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.4/dist/html2canvas-pro.min.js';
-        script.onload = () => resolve((window as any).html2canvas);
-        script.onerror = () => reject(new Error('Failed to load html2canvas-pro from CDN'));
+        script.onload = () => {
+          clearTimeout(timer);
+          if (typeof (window as any).html2canvas === 'function') {
+            resolve((window as any).html2canvas);
+          } else {
+            reject(new Error('html2canvas-pro loaded but not found on window'));
+          }
+        };
+        script.onerror = () => {
+          clearTimeout(timer);
+          reject(new Error('Failed to load html2canvas-pro from CDN'));
+        };
         document.body.appendChild(script);
       });
 
@@ -358,27 +373,49 @@ Link: ${proj.link || 'N/A'}
       try {
         // Load html2canvas (already cached if PNG was used, otherwise loaded here)
         const html2canvas = await new Promise<any>((resolve, reject) => {
-          if ((window as any).html2canvas) {
+          if (typeof (window as any).html2canvas === 'function') {
             resolve((window as any).html2canvas);
             return;
           }
+          const timer = setTimeout(() => reject(new Error('CDN timed out loading html2canvas-pro')), 15000);
           const script = document.createElement('script');
           script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.4/dist/html2canvas-pro.min.js';
-          script.onload = () => resolve((window as any).html2canvas);
-          script.onerror = () => reject(new Error('Failed to load html2canvas-pro from CDN'));
+          script.onload = () => {
+            clearTimeout(timer);
+            if (typeof (window as any).html2canvas === 'function') {
+              resolve((window as any).html2canvas);
+            } else {
+              reject(new Error('html2canvas-pro loaded but not found on window'));
+            }
+          };
+          script.onerror = () => {
+            clearTimeout(timer);
+            reject(new Error('Failed to load html2canvas-pro from CDN'));
+          };
           document.body.appendChild(script);
         });
 
         // Load jsPDF UMD module
         const jspdfModule = await new Promise<any>((resolve, reject) => {
-          if ((window as any).jspdf) {
+          if ((window as any).jspdf?.jsPDF) {
             resolve((window as any).jspdf);
             return;
           }
+          const timer = setTimeout(() => reject(new Error('CDN timed out loading jsPDF')), 15000);
           const script = document.createElement('script');
           script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-          script.onload = () => resolve((window as any).jspdf);
-          script.onerror = () => reject(new Error('Failed to load jsPDF from CDN'));
+          script.onload = () => {
+            clearTimeout(timer);
+            if ((window as any).jspdf?.jsPDF) {
+              resolve((window as any).jspdf);
+            } else {
+              reject(new Error('jsPDF loaded but module not found on window'));
+            }
+          };
+          script.onerror = () => {
+            clearTimeout(timer);
+            reject(new Error('Failed to load jsPDF from CDN'));
+          };
           document.body.appendChild(script);
         });
 
@@ -398,7 +435,10 @@ Link: ${proj.link || 'N/A'}
         const imgData = canvas.toDataURL('image/png');
         
         // Grab jsPDF from UMD namespace
-        const jsPDFClass = jspdfModule.jsPDF;
+        const jsPDFClass = jspdfModule?.jsPDF || jspdfModule?.default || jspdfModule;
+        if (typeof jsPDFClass !== 'function') {
+          throw new Error('jsPDF constructor not found in loaded module');
+        }
         const pdf = new jsPDFClass('p', 'mm', 'a4');
         
         const imgWidth = 210; // A4 page width in mm
@@ -430,7 +470,12 @@ Link: ${proj.link || 'N/A'}
   
     // Trigger Print View (Export PDF)
     const handlePrintPDF = () => {
-      window.print();
+      try {
+        window.print();
+      } catch (e) {
+        console.error('Print failed:', e);
+        alert('Print dialog could not be opened. Try using "Download PDF" instead.');
+      }
     };
 
   if (!isLoaded) {
@@ -460,7 +505,7 @@ Link: ${proj.link || 'N/A'}
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-[1440px] mx-auto p-4 md:p-8">
       
       {/* LEFT COLUMN: The Glassmorphic Editor Panel (7 cols) */}
-      <section className="lg:col-span-6 xl:col-span-5 flex flex-col gap-8">
+      <section id="editor-panel" className="lg:col-span-6 xl:col-span-5 flex flex-col gap-8">
         <div className="glass-panel rounded-[12px] p-6 md:p-8 flex flex-col gap-8">
           
           <div className="flex justify-between items-center border-b border-hairline pb-4">
@@ -619,6 +664,7 @@ Link: ${proj.link || 'N/A'}
                 onKeyDown={handleSkillKeyDown}
                 onBlur={() => addSkill(skillInput)}
                 placeholder="Add skill tag (e.g. Next.js, Postgres)..."
+                aria-label="Add a skill"
                 className="glass-input text-ink rounded-md h-10 px-3.5 py-2.5 text-xs border border-hairline focus:outline-none w-full"
               />
               
@@ -667,6 +713,7 @@ Link: ${proj.link || 'N/A'}
                   <button
                     type="button"
                     onClick={() => removeExperience(idx)}
+                    aria-label="Remove experience entry"
                     className="absolute top-4 right-4 text-muted-soft hover:text-error transition-colors p-1 cursor-pointer"
                     title="Remove experience"
                   >
@@ -677,10 +724,11 @@ Link: ${proj.link || 'N/A'}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      <label htmlFor={`exp-company-${idx}`} className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                         Company Name
                       </label>
                       <input
+                        id={`exp-company-${idx}`}
                         type="text"
                         value={exp.company}
                         onChange={(e) => updateExperience(idx, 'company', e.target.value)}
@@ -690,10 +738,11 @@ Link: ${proj.link || 'N/A'}
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      <label htmlFor={`exp-duration-${idx}`} className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                         Duration
                       </label>
                       <input
+                        id={`exp-duration-${idx}`}
                         type="text"
                         value={exp.duration}
                         onChange={(e) => updateExperience(idx, 'duration', e.target.value)}
@@ -704,10 +753,11 @@ Link: ${proj.link || 'N/A'}
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                    <label htmlFor={`exp-role-${idx}`} className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                       Role / Position Title
                     </label>
                     <input
+                      id={`exp-role-${idx}`}
                       type="text"
                       value={exp.role}
                       onChange={(e) => updateExperience(idx, 'role', e.target.value)}
@@ -717,10 +767,11 @@ Link: ${proj.link || 'N/A'}
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                    <label htmlFor={`exp-desc-${idx}`} className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                       Role Description
                     </label>
                     <textarea
+                      id={`exp-desc-${idx}`}
                       value={exp.description}
                       onChange={(e) => updateExperience(idx, 'description', e.target.value)}
                       placeholder="List technical stack details and core accomplishments..."
@@ -766,6 +817,7 @@ Link: ${proj.link || 'N/A'}
                   <button
                     type="button"
                     onClick={() => removeEducation(idx)}
+                    aria-label="Remove education entry"
                     className="absolute top-4 right-4 text-muted-soft hover:text-error transition-colors p-1 cursor-pointer"
                     title="Remove education"
                   >
@@ -776,10 +828,11 @@ Link: ${proj.link || 'N/A'}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      <label htmlFor={`edu-school-${idx}`} className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                         School / University
                       </label>
                       <input
+                        id={`edu-school-${idx}`}
                         type="text"
                         value={edu.school}
                         onChange={(e) => updateEducation(idx, 'school', e.target.value)}
@@ -789,10 +842,11 @@ Link: ${proj.link || 'N/A'}
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      <label htmlFor={`edu-duration-${idx}`} className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                         Duration
                       </label>
                       <input
+                        id={`edu-duration-${idx}`}
                         type="text"
                         value={edu.duration}
                         onChange={(e) => updateEducation(idx, 'duration', e.target.value)}
@@ -803,10 +857,11 @@ Link: ${proj.link || 'N/A'}
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                    <label htmlFor={`edu-degree-${idx}`} className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                       Degree / Program
                     </label>
                     <input
+                      id={`edu-degree-${idx}`}
                       type="text"
                       value={edu.degree}
                       onChange={(e) => updateEducation(idx, 'degree', e.target.value)}
@@ -816,10 +871,11 @@ Link: ${proj.link || 'N/A'}
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                    <label htmlFor={`edu-desc-${idx}`} className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                       Description / Honors (Optional)
                     </label>
                     <textarea
+                      id={`edu-desc-${idx}`}
                       value={edu.description}
                       onChange={(e) => updateEducation(idx, 'description', e.target.value)}
                       placeholder="Activities, achievements, honors, or thesis topics..."
@@ -865,6 +921,7 @@ Link: ${proj.link || 'N/A'}
                   <button
                     type="button"
                     onClick={() => removeProject(idx)}
+                    aria-label="Remove project entry"
                     className="absolute top-4 right-4 text-muted-soft hover:text-error transition-colors p-1 cursor-pointer"
                     title="Remove project"
                   >
@@ -875,10 +932,11 @@ Link: ${proj.link || 'N/A'}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      <label htmlFor={`proj-title-${idx}`} className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                         Project Title
                       </label>
                       <input
+                        id={`proj-title-${idx}`}
                         type="text"
                         value={proj.title}
                         onChange={(e) => updateProject(idx, 'title', e.target.value)}
@@ -888,10 +946,11 @@ Link: ${proj.link || 'N/A'}
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                      <label htmlFor={`proj-link-${idx}`} className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                         Project Link
                       </label>
                       <input
+                        id={`proj-link-${idx}`}
                         type="text"
                         value={proj.link}
                         onChange={(e) => updateProject(idx, 'link', e.target.value)}
@@ -902,10 +961,11 @@ Link: ${proj.link || 'N/A'}
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
+                    <label htmlFor={`proj-desc-${idx}`} className="text-[9px] font-sans font-semibold uppercase tracking-wider text-muted">
                       Project Description
                     </label>
                     <textarea
+                      id={`proj-desc-${idx}`}
                       value={proj.description}
                       onChange={(e) => updateProject(idx, 'description', e.target.value)}
                       placeholder="What is the purpose of this project and what tech stacks did you use?"

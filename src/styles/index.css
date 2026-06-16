@@ -139,7 +139,7 @@ h1, h2, h3, h4, h5, h6 {
 
   /* Hide app shell dashboard elements */
   header,
-  section:first-of-type, /* Left editor form column */
+  #editor-panel, /* Left editor form column */
   .no-print,
   button,
   .sticky,
@@ -229,8 +229,8 @@ h1, h2, h3, h4, h5, h6 {
     width: 68% !important;
   }
 
-  /* Clear floats for the preview footer */
-  #resume-preview-container footer {
+  /* Clear floats for the preview footer — only if it's NOT .no-print */
+  #resume-preview-container footer:not(.no-print) {
     clear: both !important;
     display: block !important;
     margin-top: 30px !important;

@@ -176,8 +176,7 @@ export function analyzeResume(data: ResumeData): ATSReport {
       for (const sentence of sentences) {
         totalBullets++;
         const trimmed = sentence.trim();
-        if (WEAK_PATTERNS.some(p => p.test(trimmed))) weakCount++;
-        else if (!STRONG_VERBS.has(trimmed.toLowerCase().split(/\s+/)[0])) {
+        if (WEAK_PATTERNS.some(p => p.test(trimmed))) {
           weakCount++;
         }
       }
