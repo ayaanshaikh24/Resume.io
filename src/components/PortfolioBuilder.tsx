@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PreviewPanel } from './PreviewPanel';
+import { analyzeResume } from '../utils/resumeAnalysis';
+import { ATSReportPanel } from './ATSReport';
 
 export interface Project {
   title: string;
@@ -94,6 +96,8 @@ export const PortfolioBuilder: React.FC = () => {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const report = useMemo(() => analyzeResume(data), [data]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -1026,6 +1030,9 @@ Link: ${proj.link || 'N/A'}
             </button>
           </div>
         </div>
+
+        {/* ATS Resume Score & Checklist */}
+        <ATSReportPanel report={report} />
 
         {/* Live Resume Canvas */}
         <div className="w-full overflow-x-auto">
