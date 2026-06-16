@@ -457,7 +457,7 @@ Link: ${proj.link || 'N/A'}
       
       {/* LEFT COLUMN: The Glassmorphic Editor Panel (7 cols) */}
       <section className="lg:col-span-6 xl:col-span-5 flex flex-col gap-8">
-        <div className="glass-panel rounded-2xl p-6 md:p-8 flex flex-col gap-8">
+        <div className="glass-panel rounded-[12px] p-6 md:p-8 flex flex-col gap-8">
           
           <div className="flex justify-between items-center border-b border-hairline pb-4">
             <div>
@@ -470,7 +470,7 @@ Link: ${proj.link || 'N/A'}
             </div>
             <button
               onClick={resetToDefault}
-              className="text-xs font-sans font-medium text-muted hover:text-primary hover:bg-white border border-hairline rounded-md px-3 py-1.5 transition-all duration-300 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+              className="text-xs font-sans font-medium text-muted hover:text-primary hover:bg-hairline-soft border border-hairline rounded-md px-3 py-1.5 transition-all duration-300 cursor-pointer"
               id="reset-template-btn"
             >
               Reset Draft
@@ -478,7 +478,7 @@ Link: ${proj.link || 'N/A'}
           </div>
 
           {/* Profile Details Section */}
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2 border-b border-hairline-soft pb-2">
               {/* User Icon SVG */}
               <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
@@ -533,7 +533,7 @@ Link: ${proj.link || 'N/A'}
           </div>
 
           {/* Contact Details Section */}
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2 border-b border-hairline-soft pb-2">
               {/* Envelope SVG */}
               <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
@@ -619,12 +619,12 @@ Link: ${proj.link || 'N/A'}
               />
               
               {/* Skill Tags List */}
-              <div className="flex flex-wrap gap-1.5 mt-1">
+              <div className="flex flex-wrap gap-2">
                 {data.skills.map((skill, idx) => (
                   <span
                     key={idx}
                     onClick={() => removeSkill(idx)}
-                    className="inline-flex items-center gap-1 bg-white/70 hover:bg-red-50 text-ink hover:text-error font-sans text-[11px] px-2.5 py-1 rounded-sm border border-hairline-soft font-medium cursor-pointer transition-colors group shadow-[0_1px_2px_rgba(0,0,0,0.01)]"
+                    className="inline-flex items-center gap-1 bg-hairline-soft hover:bg-red-50 text-ink hover:text-error font-sans text-[11px] px-2 py-0.5 rounded-sm font-medium cursor-pointer transition-colors group"
                     title="Click to remove"
                   >
                     {skill}
@@ -926,7 +926,7 @@ Link: ${proj.link || 'N/A'}
       <section className="lg:col-span-6 xl:col-span-7 lg:sticky lg:top-8 flex flex-col gap-6">
         
         {/* Premium Action Toolbar (Not visible during printing) */}
-        <div className="glass-panel rounded-2xl p-4 flex flex-wrap gap-4 items-center justify-between shadow-[0_2px_12px_rgba(31,31,31,0.02)] no-print">
+        <div className="glass-panel rounded-[12px] p-4 flex flex-wrap gap-4 items-center justify-between no-print">
           {/* Micro-interaction Autosave Indicator */}
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isSaving ? 'bg-amber bg-accent-amber animate-saving-pulse' : 'bg-success bg-accent-teal'}`}></div>
@@ -939,7 +939,7 @@ Link: ${proj.link || 'N/A'}
             {/* Copy Markdown Summary */}
             <button
               onClick={handleCopySummary}
-              className="bg-white/60 hover:bg-white text-ink text-xs font-semibold px-3 py-2 h-9 rounded-md border border-hairline transition-all duration-300 flex items-center gap-1.5 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+              className="bg-transparent hover:bg-hairline-soft text-ink text-xs font-semibold px-3 py-2 h-9 rounded-md border border-hairline transition-all duration-300 flex items-center gap-1.5 cursor-pointer"
               title="Copy resume details as Markdown format"
               id="copy-summary-btn"
             >
@@ -964,7 +964,7 @@ Link: ${proj.link || 'N/A'}
             <button
               onClick={handleDownloadImage}
               disabled={downloading}
-              className="bg-white/60 hover:bg-white text-ink text-xs font-semibold px-3 py-2 h-9 rounded-md border border-hairline transition-all duration-300 flex items-center gap-1.5 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+              className="bg-transparent hover:bg-hairline-soft text-ink text-xs font-semibold px-3 py-2 h-9 rounded-md border border-hairline transition-all duration-300 flex items-center gap-1.5 cursor-pointer"
               title="Download resume canvas as PNG"
               id="download-image-btn"
             >
@@ -990,7 +990,7 @@ Link: ${proj.link || 'N/A'}
             <button
               onClick={handleDownloadPDF}
               disabled={downloadingPdf}
-              className="bg-white/60 hover:bg-white text-ink text-xs font-semibold px-3 py-2 h-9 rounded-md border border-hairline transition-all duration-300 flex items-center gap-1.5 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+              className="bg-transparent hover:bg-hairline-soft text-ink text-xs font-semibold px-3 py-2 h-9 rounded-md border border-hairline transition-all duration-300 flex items-center gap-1.5 cursor-pointer"
               title="Download resume as PDF directly"
               id="download-pdf-btn"
             >

@@ -69,24 +69,20 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Custom premium elements */
 .glass-panel {
-  background-color: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 24px rgba(31, 31, 31, 0.02);
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-hairline);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .glass-input {
-  background-color: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background-color: #FFFFFF;
+  border-color: var(--color-hairline);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-input:focus {
-  background-color: #FFFFFF;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(217, 119, 87, 0.12);
+  box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.1);
 }
 
 /* Premium Card hover effects */
